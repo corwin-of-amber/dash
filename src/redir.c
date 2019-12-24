@@ -416,7 +416,11 @@ savefd(int from, int ofd)
 	int newfd;
 	int err;
 
+#ifdef __wasi__
+	newfd = __wasi_dupfd(from, 10, 0);
+#else
 	newfd = fcntl(from, F_DUPFD, 10);
+#endif
 	err = newfd < 0 ? errno : 0;
 	if (err != EBADF) {
 		close(ofd);

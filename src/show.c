@@ -351,6 +351,10 @@ trargs(char **ap)
 void
 opentrace(void)
 {
+#ifdef __wasi__
+    tracefile = stdout;
+    return;
+#endif
 	char s[100];
 #ifdef O_APPEND
 	int flags;

@@ -927,18 +927,36 @@ out:
 	return status;
 }
 
+#ifdef __wasi__
+#include <wasi/control.h>
+#endif
+
 STATIC int
 evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 {
 	char *volatile savecmdname;
 	struct jmploc *volatile savehandler;
+#ifdef __wasi__
+	struct jmploc *pjmploc = alloca(sizeof(struct jmploc));
+	int *pstatus = alloca(sizeof(int));
+	int *ret = alloca(sizeof(int));
+
+	#define jmploc (*pjmploc)
+	#define status (*pstatus)
+#else
 	struct jmploc jmploc;
 	int status;
 	int i;
+#endif
 
 	savecmdname = commandname;
 	savehandler = handler;
+#ifdef __wasi__
+__control_setjmp(jmploc.loc, ^ void (int i) {
+	if ((*ret = i))
+#else
 	if ((i = setjmp(jmploc.loc)))
+#endif
 		goto cmddone;
 	handler = &jmploc;
 	commandname = argv[0];
@@ -957,8 +975,15 @@ cmddone:
 	freestdout();
 	commandname = savecmdname;
 	handler = savehandler;
+#ifdef __wasi__
+});
+	return *ret;
 
+	#undef jmploc
+	#undef status
+#else
 	return i;
+#endif
 }
 
 STATIC int

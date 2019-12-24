@@ -191,6 +191,10 @@ setjobctl(int on)
 	int fd;
 	int pgrp;
 
+#ifdef __wasi__
+    return;
+#endif
+    
 	if (on == jobctl || rootshell == 0)
 		return;
 	if (on) {
@@ -960,6 +964,10 @@ forkshell(struct job *jp, union node *n, int mode)
 	return pid;
 }
 
+#ifdef __wasi__
+#include <wasi/control.h>
+#endif
+
 struct job *vforkexec(union node *n, char **argv, const char *path, int idx)
 {
 	struct job *jp;
@@ -972,6 +980,9 @@ struct job *vforkexec(union node *n, char **argv, const char *path, int idx)
 
 	pid = vfork();
 
+#ifdef __wasi__
+	__control_fork(0, pid, ^ void (int pid) { 
+#endif
 	if (!pid) {
 		forkchild(jp, n, FORK_FG);
 		sigclearmask();
@@ -982,6 +993,9 @@ struct job *vforkexec(union node *n, char **argv, const char *path, int idx)
 	vforked = 0;
 	sigclearmask();
 	forkparent(jp, n, FORK_FG, pid);
+#ifdef __wasi__
+	});
+#endif
 
 	return jp;
 }

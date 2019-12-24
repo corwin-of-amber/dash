@@ -77,6 +77,11 @@ STATIC char *find_dot_file(char *);
 static int cmdloop(int);
 int main(int, char **);
 
+#ifdef __wasi__
+#include <alloca.h>
+#include <wasi/control.h>
+#endif
+
 /*
  * Main routine.  We initialize things, parse the arguments, execute
  * profiles if we're a login shell, and then call cmdloop to execute
@@ -88,11 +93,21 @@ int main(int, char **);
 int
 main(int argc, char **argv)
 {
+#ifndef __wasi__
 	char *shinit;
 	volatile int state;
 	struct jmploc jmploc;
 	struct stackmark smark;
 	int login;
+#else
+	int *pstate = alloca(sizeof(int));
+	struct jmploc *pjmploc = alloca(sizeof(struct jmploc));
+
+	#define state (*pstate)
+	#define jmploc (*pjmploc)
+
+    setvbuf(stdin, 0, _IONBF, 0);  // unbuffered
+#endif
 
 #ifdef __GLIBC__
 	dash_errno = __errno_location();
@@ -102,7 +117,17 @@ main(int argc, char **argv)
 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
 #endif
 	state = 0;
+#ifdef __wasi__
+	__control_setjmp(jmploc.loc, ^ void(int i) {
+
+	char *shinit;
+	struct stackmark smark;
+	int login;
+	
+	if (i) {
+#else
 	if (unlikely(setjmp(jmploc.loc))) {
+#endif
 		int e;
 		int s;
 
@@ -186,6 +211,11 @@ state4:	/* XXX ??? - why isn't this before the "if" statement */
 #endif
 	exitshell();
 	/* NOTREACHED */
+#ifdef __wasi__
+});
+
+	return 0;
+#endif
 }
 
 
