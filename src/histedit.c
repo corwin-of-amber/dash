@@ -373,7 +373,7 @@ histcmd(int argc, char **argv)
 					out2str(s);
 				}
 
-				evalstring(s, 0);
+				evalstring((char*)s, 0);
 				if (displayhist && hist) {
 					/*
 					 *  XXX what about recursive and

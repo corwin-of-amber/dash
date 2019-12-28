@@ -100,11 +100,15 @@ main(int argc, char **argv)
 	struct stackmark smark;
 	int login;
 #else
-	int *pstate = alloca(sizeof(int));
-	struct jmploc *pjmploc = alloca(sizeof(struct jmploc));
+	struct ar {
+		int state;
+		struct jmploc jmploc;
+		struct stackmark smark;
+	} *ar = alloca(sizeof(struct ar));
 
-	#define state (*pstate)
-	#define jmploc (*pjmploc)
+	#define state (ar->state)
+	#define jmploc (ar->jmploc)
+	#define smark (ar->smark)
 
     setvbuf(stdin, 0, _IONBF, 0);  // unbuffered
 #endif
@@ -118,10 +122,9 @@ main(int argc, char **argv)
 #endif
 	state = 0;
 #ifdef __wasi__
-	__control_setjmp(jmploc.loc, ^ void(int i) {
+__control_setjmp(jmploc.loc, ^ void(int i) {
 
 	char *shinit;
-	struct stackmark smark;
 	int login;
 	
 	if (i) {
@@ -215,6 +218,10 @@ state4:	/* XXX ??? - why isn't this before the "if" statement */
 });
 
 	return 0;
+
+	#undef state
+	#undef jmploc
+	#undef smark
 #endif
 }
 
