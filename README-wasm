@@ -1,0 +1,6 @@
+# Prerequisites:
+# - libedit compiled for both native and WASM
+./configure --with-libedit
+make
+ln -s <location-of-wasi-kernel-include> wasi
+./compile-wasi clean

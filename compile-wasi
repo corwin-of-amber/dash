@@ -3,9 +3,9 @@ if [ "$1" == "clean" ]; then
   rm -f src/*.o src/*/*.o
 fi
 
-INC='-I../stubs -include ../stubs/etc.h -I../../gnu/libedit/src'
-LIB='-L../../gnu/libedit/src/.libs'
+INC='-I../wasi -include ../wasi/etc.h -I../../gnu/libedit/src'
+LIBS=../../gnu/libedit/src/.libs/libedit.wa
 
 make -C src AM_DEFAULT_VERBOSITY=1 CC=/opt/wasi-sdk/bin/clang\
-    CFLAGS="-DDEBUG=1 -fblocks $INC"   \
-    LDFLAGS="-Wl,-allow-undefined -Wl,--import-table $LIB" EXEEXT=.wasm
+    CFLAGS="-O3 -DDEBUG=1 -fblocks $INC"   \
+    LDFLAGS="-Wl,-allow-undefined -Wl,--import-table" LIBS="$LIBS" EXEEXT=.wasm
